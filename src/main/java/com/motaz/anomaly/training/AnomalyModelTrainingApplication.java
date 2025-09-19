@@ -6,6 +6,7 @@ import com.motaz.anomaly.training.repository.TransactionFeatureRepository;
 import com.motaz.anomaly.training.repository.TransactionRepository;
 import com.motaz.anomaly.training.service.AnomalyFeatureFillService;
 import com.motaz.anomaly.training.service.DataPreparationService;
+import com.motaz.anomaly.training.service.ModelVizService;
 import com.motaz.anomaly.training.service.TrainIsolationForestService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -31,17 +32,23 @@ public class AnomalyModelTrainingApplication{
             System.out.println("Initializing database with employee data...");
             log.info("Initializing database...");
             DataPreparationService dataPreparationService = new DataPreparationService(transactionRepository);
-            dataPreparationService.prepareData();
+            //dataPreparationService.prepareData();
             log.info("Initializing database Completed...");
 
             log.info("Fill Anomaly Feature Data...");
             AnomalyFeatureFillService anomalyFeatureFillService = new AnomalyFeatureFillService(transactionRepository,transactionFeatureRepository,customerBaseLineRepository);
-            anomalyFeatureFillService.doFeatureFill();
+            //anomalyFeatureFillService.doFeatureFill();
             log.info("Fill Anomaly Feature Data Completed...");
 
+            log.info("Train Isolation Forest Model...");
             TrainIsolationForestService trainIsolationForestService = new TrainIsolationForestService(transactionFeatureRepository,modelRegistryRepository);
-            trainIsolationForestService.trainModel();
+            //trainIsolationForestService.trainModel();
             log.info("Train Isolation Forest Model Completed...");
+
+            log.info("Isolation Forest Visualization...");
+            ModelVizService modelVizService = new ModelVizService(modelRegistryRepository,transactionFeatureRepository);
+            modelVizService.visualize();
+            log.info("Isolation Forest Visualization Completed...");
         };
     }
 }

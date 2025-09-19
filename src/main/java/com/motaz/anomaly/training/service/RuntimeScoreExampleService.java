@@ -28,7 +28,7 @@ public class RuntimeScoreExampleService {
 
     private  IsolationForest loadLatestModel() throws IOException, ClassNotFoundException {
         IsolationForest iForest = null ;
-        Optional<ModelRegistryEntity> optionalModelRegistryEntity = modelRegistryRepository.findById(1l);
+        Optional<ModelRegistryEntity> optionalModelRegistryEntity = modelRegistryRepository.findLatestIFModel();
         if (optionalModelRegistryEntity.isPresent()) {
             ModelRegistryEntity modelRegistryEntity = optionalModelRegistryEntity.get();
             ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(modelRegistryEntity.getModelBytes()));
