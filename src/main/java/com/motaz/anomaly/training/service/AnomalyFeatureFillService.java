@@ -78,10 +78,14 @@ public class AnomalyFeatureFillService {
                 double priorMedian = max(computeMedian(featureBaseline.allAmounts), EPS);
 
                 // 4 features
-                double amountZScore     = clip((transaction.getAmount().doubleValue() - featureBaseline.mean) / safeStd,-10.0,10.0);
-                double timeSegmentRatio = clip(transaction.getAmount().doubleValue()  / safeSegMean,0.0,20.0);
-                double velocityRatio    = clip(transaction.getAmount().doubleValue()  / safeMean,0.0,20.0);     // your definition
-                double medianDeviation  = clip(transaction.getAmount().doubleValue()  / priorMedian,0.0,20.0);
+                double amountZScore     = (transaction.getAmount().doubleValue() - featureBaseline.mean) / safeStd;
+                double timeSegmentRatio = transaction.getAmount().doubleValue()  / safeSegMean;
+                double velocityRatio    = transaction.getAmount().doubleValue()  / safeMean;     // your definition
+                double medianDeviation  = transaction.getAmount().doubleValue()  / priorMedian;
+//                double amountZScore     = clip((transaction.getAmount().doubleValue() - featureBaseline.mean) / safeStd,-10.0,10.0);
+//                double timeSegmentRatio = clip(transaction.getAmount().doubleValue()  / safeSegMean,0.0,20.0);
+//                double velocityRatio    = clip(transaction.getAmount().doubleValue()  / safeMean,0.0,20.0);     // your definition
+//                double medianDeviation  = clip(transaction.getAmount().doubleValue()  / priorMedian,0.0,20.0);
                 log.info("Computed Features: amountZScore:{}, timeSegmentRatio:{}, velocityRatio:{}, medianDeviation:{}",
                         amountZScore, timeSegmentRatio, velocityRatio, medianDeviation);
 

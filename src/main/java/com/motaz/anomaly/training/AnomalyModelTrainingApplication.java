@@ -39,7 +39,7 @@ public class AnomalyModelTrainingApplication{
 
             log.info("Train Isolation Forest Model...");
             TrainIsolationForestService trainIsolationForestService = new TrainIsolationForestService(transactionFeatureRepository,modelRegistryRepository);
-            trainIsolationForestService.trainModel();
+            //trainIsolationForestService.trainModel();
             log.info("Train Isolation Forest Model Completed...");
 
             log.info("Isolation Forest Visualization...");
@@ -52,7 +52,7 @@ public class AnomalyModelTrainingApplication{
                     customerBaseLineRepository,transactionRepository,transactionFeatureRepository,anomalyAlertRepository);
 
             long customerId = 101L;
-            double amountSar = 1000000000.0;
+            double amountSar = 50000;
             LocalDateTime tsUtc = LocalDateTime.now().withHour(2).withMinute(30).withSecond(0).withNano(0);
             realTimeTransactionTestService.simulateAndScore(customerId,amountSar,tsUtc);
             log.info("Real Time Transaction Test Completed...");

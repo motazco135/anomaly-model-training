@@ -26,7 +26,7 @@ import static java.lang.Math.sqrt;
 @RequiredArgsConstructor
 public class RealTimeTransactionTestService {
 
-    private static final double THRESHOLD = 0.544;
+    private static final double THRESHOLD = 0.55;
     private final ModelRegistryRepository modelRegistryRepository;
     private final CustomerBaseLineRepository customerBaseLineRepository;
     private final TransactionRepository transactionRepository;
@@ -94,11 +94,14 @@ public class RealTimeTransactionTestService {
         double safeSeg  = Math.max(segMean, 1.0);
         double safeMed  = Math.max(median, 1.0);
 
-        double amountZScore     = clip((amount - mean) / safeStd,-10.0,10.0);
-        double timeSegmentRatio = clip(amount / safeSeg,0,20.0);
-        double velocityRatio    = clip(amount / safeMean,0,20.0);
-        double medianDeviation  = clip(amount / safeMed,0,20.0);
-
+//        double amountZScore     = clip((amount - mean) / safeStd,-10.0,10.0);
+//        double timeSegmentRatio = clip(amount / safeSeg,0,20.0);
+//        double velocityRatio    = clip(amount / safeMean,0,20.0);
+//        double medianDeviation  = clip(amount / safeMed,0,20.0);
+        double amountZScore     = (amount - mean) / safeStd;
+        double timeSegmentRatio = amount / safeSeg;
+        double velocityRatio    = amount / safeMean;
+        double medianDeviation  = amount / safeMed;
         double[] realTimeFeatureSet = { amountZScore, timeSegmentRatio, velocityRatio, medianDeviation };
 
         //Scoring
