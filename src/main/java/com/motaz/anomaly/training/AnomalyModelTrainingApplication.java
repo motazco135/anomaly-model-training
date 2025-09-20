@@ -44,7 +44,7 @@ public class AnomalyModelTrainingApplication{
 
             log.info("Isolation Forest Visualization...");
             ModelVizService modelVizService = new ModelVizService(modelRegistryRepository,transactionFeatureRepository);
-            //modelVizService.visualize();
+            modelVizService.visualize2();
             log.info("Isolation Forest Visualization Completed...");
 
             log.info("Real Time Transaction Test...");
@@ -52,7 +52,7 @@ public class AnomalyModelTrainingApplication{
                     customerBaseLineRepository,transactionRepository,transactionFeatureRepository,anomalyAlertRepository);
 
             long customerId = 101L;
-            double amountSar = 50000;
+            double amountSar = 1;
             LocalDateTime tsUtc = LocalDateTime.now().withHour(2).withMinute(30).withSecond(0).withNano(0);
             realTimeTransactionTestService.simulateAndScore(customerId,amountSar,tsUtc);
             log.info("Real Time Transaction Test Completed...");

@@ -14,7 +14,6 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Component
@@ -43,8 +42,7 @@ public class TrainIsolationForestService {
             double[][] trainingData = rows.toArray(new double[0][]);
             log.info("Training Isolation Forest model...");
 
-            // 2) Build options
-            // 3) Compute sampling_rate = min(1.0, TARGET_SUBSAMPLE / n)
+            //Compute sampling_rate = min(1.0, TARGET_SUBSAMPLE / n)
             double samplingRate = Math.min(1.0, SUBSAMPLE / (double) trainingData.length);
             log.info("sampling rate: {}",  samplingRate);
             IsolationForest.Options options = new IsolationForest.Options(TREES, 0, samplingRate, 0);

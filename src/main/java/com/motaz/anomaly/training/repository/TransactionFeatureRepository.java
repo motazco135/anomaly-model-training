@@ -9,7 +9,7 @@ import java.util.List;
 @Repository
 public interface TransactionFeatureRepository extends JpaRepository<TransactionFeatureEntity, Long> {
 
-    List<TransactionFeatureEntity> findByCustomerId(long customerId);
+    List<TransactionFeatureEntity> findByCustomerIdAndIsTrainable(long customerId,boolean isTrainable);
 
     List<TransactionFeatureEntity> findByIsTrainable(boolean isTrainable);
 }

@@ -82,14 +82,10 @@ public class AnomalyFeatureFillService {
                 double timeSegmentRatio = transaction.getAmount().doubleValue()  / safeSegMean;
                 double velocityRatio    = transaction.getAmount().doubleValue()  / safeMean;     // your definition
                 double medianDeviation  = transaction.getAmount().doubleValue()  / priorMedian;
-//                double amountZScore     = clip((transaction.getAmount().doubleValue() - featureBaseline.mean) / safeStd,-10.0,10.0);
-//                double timeSegmentRatio = clip(transaction.getAmount().doubleValue()  / safeSegMean,0.0,20.0);
-//                double velocityRatio    = clip(transaction.getAmount().doubleValue()  / safeMean,0.0,20.0);     // your definition
-//                double medianDeviation  = clip(transaction.getAmount().doubleValue()  / priorMedian,0.0,20.0);
                 log.info("Computed Features: amountZScore:{}, timeSegmentRatio:{}, velocityRatio:{}, medianDeviation:{}",
                         amountZScore, timeSegmentRatio, velocityRatio, medianDeviation);
 
-                // insert feature row
+                // insert t_transaction_feature
                 TransactionFeatureEntity transactionFeatureEntity = new TransactionFeatureEntity();
                 transactionFeatureEntity.setTxn(transaction);
                 transactionFeatureEntity.setCustomerId(customerId);
@@ -110,7 +106,7 @@ public class AnomalyFeatureFillService {
                 transactionFeatureEntity.setIsTrainable((featureBaseline.n >= 10) && (featureBaseline.std >= 1.0));
                 transactionFeatureEntityList.add(transactionFeatureEntity);
 
-                //------ UPDATE Customer Base Line
+                //------ UPDATE Customer BaseLine
                 customerBaseLine.allAmounts.add(transaction.getAmount().doubleValue());
                 switch (seg) {
                     case 0 -> customerBaseLine.nightAmounts.add(transaction.getAmount().doubleValue());
@@ -118,6 +114,7 @@ public class AnomalyFeatureFillService {
                     case 2 -> customerBaseLine.afternoonAmounts.add(transaction.getAmount().doubleValue());
                     default -> customerBaseLine.eveningAmounts.add(transaction.getAmount().doubleValue());
                 }
+
                 // Welford for mean/std
                 customerBaseLine.priorCount += 1;
                 double customerDelta = transaction.getAmount().doubleValue() - customerBaseLine.priorMean;
@@ -130,7 +127,7 @@ public class AnomalyFeatureFillService {
                 double customerPrev = customerBaseLine.segMean[seg];
                 customerBaseLine.segMean[seg] = customerPrev + (transaction.getAmount().doubleValue() - customerPrev) / customerBaseLine.segCount[seg];
 
-                // ----- UPDATE baseline with current txn (Welford + seg means + amounts list) -----
+                // ----- UPDATE Feature baseline with current txn (Welford + seg means + amounts list) -----
                 featureBaseline.allAmounts.add(transaction.getAmount().doubleValue());
                 featureBaseline.n += 1;
                 double delta  = transaction.getAmount().doubleValue() - featureBaseline.mean;
@@ -206,10 +203,5 @@ public class AnomalyFeatureFillService {
         double s2 = 0.0; for (double v : xs) { double d = v - mean; s2 += d * d; }
         return max(Math.sqrt(s2 / (xs.size() - 1)), 1.0);
     }
-
-    static double clip(double v, double lo, double hi) {
-        return Math.max(lo, Math.min(hi, v));
-    }
-
 
 }
