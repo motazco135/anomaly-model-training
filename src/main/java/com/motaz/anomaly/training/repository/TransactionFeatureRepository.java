@@ -8,5 +8,6 @@ import java.util.List;
 
 @Repository
 public interface TransactionFeatureRepository extends JpaRepository<TransactionFeatureEntity, Long> {
+
     List<TransactionFeatureEntity> findByCustomerId(long customerId);
 }

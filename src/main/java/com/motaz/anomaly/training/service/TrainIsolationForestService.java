@@ -14,6 +14,7 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Component
@@ -29,14 +30,18 @@ public class TrainIsolationForestService {
     public void trainModel(){
         //TODO: Use Pagination
         List<double[]> rows = new ArrayList<>();
-        transactionFeatureRepository.findAll().forEach(transactionFeature ->
-            rows.add(new double[]{
-                    transactionFeature.getAmountZScore(),
-                    transactionFeature.getTimeSegmentRatio(),
-                    transactionFeature.getVelocityRatio(),
-                    transactionFeature.getMedianDeviation()
-            })
-        );
+        AtomicInteger trainedRows= new AtomicInteger();
+        transactionFeatureRepository.findAll().forEach(transactionFeature ->{
+            if(trainedRows.get()>5){
+                rows.add(new double[]{
+                        transactionFeature.getAmountZScore(),
+                        transactionFeature.getTimeSegmentRatio(),
+                        transactionFeature.getVelocityRatio(),
+                        transactionFeature.getMedianDeviation()
+                });
+            }
+            trainedRows.getAndIncrement();
+        });
 
         if(!rows.isEmpty()){
             double[][] trainingData = rows.toArray(new double[0][]);

@@ -1,18 +1,14 @@
 package com.motaz.anomaly.training;
 
-import com.motaz.anomaly.training.repository.CustomerBaseLineRepository;
-import com.motaz.anomaly.training.repository.ModelRegistryRepository;
-import com.motaz.anomaly.training.repository.TransactionFeatureRepository;
-import com.motaz.anomaly.training.repository.TransactionRepository;
-import com.motaz.anomaly.training.service.AnomalyFeatureFillService;
-import com.motaz.anomaly.training.service.DataPreparationService;
-import com.motaz.anomaly.training.service.ModelVizService;
-import com.motaz.anomaly.training.service.TrainIsolationForestService;
+import com.motaz.anomaly.training.repository.*;
+import com.motaz.anomaly.training.service.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+
+import java.time.LocalDateTime;
 
 @Slf4j
 @SpringBootApplication
@@ -27,28 +23,40 @@ public class AnomalyModelTrainingApplication{
     public CommandLineRunner initDatabase(TransactionRepository transactionRepository,
                                           TransactionFeatureRepository transactionFeatureRepository,
                                           CustomerBaseLineRepository customerBaseLineRepository,
-                                          ModelRegistryRepository modelRegistryRepository) {
+                                          ModelRegistryRepository modelRegistryRepository,
+                                          AnomalyAlertRepository anomalyAlertRepository) {
         return args -> {
             System.out.println("Initializing database with employee data...");
             log.info("Initializing database...");
             DataPreparationService dataPreparationService = new DataPreparationService(transactionRepository);
-            //dataPreparationService.prepareData();
+            dataPreparationService.prepareData();
             log.info("Initializing database Completed...");
 
             log.info("Fill Anomaly Feature Data...");
             AnomalyFeatureFillService anomalyFeatureFillService = new AnomalyFeatureFillService(transactionRepository,transactionFeatureRepository,customerBaseLineRepository);
-            //anomalyFeatureFillService.doFeatureFill();
+            anomalyFeatureFillService.doFeatureFill();
             log.info("Fill Anomaly Feature Data Completed...");
 
             log.info("Train Isolation Forest Model...");
             TrainIsolationForestService trainIsolationForestService = new TrainIsolationForestService(transactionFeatureRepository,modelRegistryRepository);
-            //trainIsolationForestService.trainModel();
+            trainIsolationForestService.trainModel();
             log.info("Train Isolation Forest Model Completed...");
 
             log.info("Isolation Forest Visualization...");
             ModelVizService modelVizService = new ModelVizService(modelRegistryRepository,transactionFeatureRepository);
             modelVizService.visualize();
             log.info("Isolation Forest Visualization Completed...");
+
+            log.info("Real Time Transaction Test...");
+            RealTimeTransactionTestService realTimeTransactionTestService = new RealTimeTransactionTestService(modelRegistryRepository,
+                    customerBaseLineRepository,transactionRepository,transactionFeatureRepository,anomalyAlertRepository);
+
+            long customerId = 101L;
+            double amountSar = 1000000000.0;
+            LocalDateTime tsUtc = LocalDateTime.now().withHour(2).withMinute(30).withSecond(0).withNano(0);
+            realTimeTransactionTestService.simulateAndScore(customerId,amountSar,tsUtc);
+            log.info("Real Time Transaction Test Completed...");
+
         };
     }
 }

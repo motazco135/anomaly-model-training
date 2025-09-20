@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS t_anomaly_alert (
   channel       VARCHAR(16) NOT NULL,
   ts_utc        TIMESTAMP NOT NULL,
   score         NUMERIC(6,4) NOT NULL,
-  severity      VARCHAR(8) NOT NULL,      -- low|med|high
+  severity      VARCHAR(50) NOT NULL,      -- low|med|high
   facts_json    JSONB NOT NULL,           -- {amount_z, time_ratio, velocity_ratio, median_dev, means...}
   created_at    TIMESTAMP NOT NULL DEFAULT NOW()
 );

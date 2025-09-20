@@ -72,6 +72,9 @@ public class TransactionFeatureEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @Column(name="is_trainable")
+    private Boolean isTrainable;
+
     @PrePersist
     public void setCreatedAt() {
         this.createdAt = Instant.now();

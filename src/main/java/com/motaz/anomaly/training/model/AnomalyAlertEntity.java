@@ -55,4 +55,9 @@ public class AnomalyAlertEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @PrePersist
+    private void setCreatedAt() {
+        this.createdAt = Instant.now();
+    }
+
 }

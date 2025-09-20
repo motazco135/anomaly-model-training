@@ -44,7 +44,7 @@ public class AnomalyFeatureFillService {
     }
 
     public List<TransactionEntity> getTransactionsByCustomerId(Long customerId){
-        List<TransactionEntity> transactions = transactionRepository.findAllByCustomerIdOrderByTsUtc(customerId);
+        List<TransactionEntity> transactions = transactionRepository.findAllByCustomerIdOrderByTsUtcAsc(customerId);
         log.info("Found {} transactions , for customerId: {} ", transactions.size(),customerId);
         return transactions;
     }
@@ -78,10 +78,10 @@ public class AnomalyFeatureFillService {
                 double priorMedian = max(computeMedian(featureBaseline.allAmounts), EPS);
 
                 // 4 features
-                double amountZScore     = (transaction.getAmount().doubleValue() - featureBaseline.mean) / safeStd;
-                double timeSegmentRatio = transaction.getAmount().doubleValue()  / safeSegMean;
-                double velocityRatio    = transaction.getAmount().doubleValue()  / safeMean;     // your definition
-                double medianDeviation  = transaction.getAmount().doubleValue()  / priorMedian;
+                double amountZScore     = clip((transaction.getAmount().doubleValue() - featureBaseline.mean) / safeStd,-10.0,10.0);
+                double timeSegmentRatio = clip(transaction.getAmount().doubleValue()  / safeSegMean,0.0,20.0);
+                double velocityRatio    = clip(transaction.getAmount().doubleValue()  / safeMean,0.0,20.0);     // your definition
+                double medianDeviation  = clip(transaction.getAmount().doubleValue()  / priorMedian,0.0,20.0);
                 log.info("Computed Features: amountZScore:{}, timeSegmentRatio:{}, velocityRatio:{}, medianDeviation:{}",
                         amountZScore, timeSegmentRatio, velocityRatio, medianDeviation);
 
@@ -103,6 +103,7 @@ public class AnomalyFeatureFillService {
                 transactionFeatureEntity.setBaselineMedianAmount(priorMedian);
                 transactionFeatureEntity.setBaselineSegIndex(seg);
                 transactionFeatureEntity.setBaselineSegMean(segMean);
+                transactionFeatureEntity.setIsTrainable((featureBaseline.n >= 10) && (featureBaseline.std >= 1.0));
                 transactionFeatureEntityList.add(transactionFeatureEntity);
 
                 //------ UPDATE Customer Base Line
@@ -200,6 +201,10 @@ public class AnomalyFeatureFillService {
         if (xs.size() <= 1) return 1.0;
         double s2 = 0.0; for (double v : xs) { double d = v - mean; s2 += d * d; }
         return max(Math.sqrt(s2 / (xs.size() - 1)), 1.0);
+    }
+
+    static double clip(double v, double lo, double hi) {
+        return Math.max(lo, Math.min(hi, v));
     }
 
 

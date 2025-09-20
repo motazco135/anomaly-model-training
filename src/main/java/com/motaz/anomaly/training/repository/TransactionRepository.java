@@ -10,7 +10,7 @@ import java.util.List;
 @Repository
 public interface TransactionRepository extends JpaRepository<TransactionEntity, Long> {
 
-    List<TransactionEntity> findAllByCustomerIdOrderByTsUtc(Long customerId);
+    List<TransactionEntity> findAllByCustomerIdOrderByTsUtcAsc(Long customerId);
 
     List<TransactionEntity> findAllByCustomerIdAndTsUtcAfterOrderByTsUtc(int customerId, Instant tsUtc);
 
