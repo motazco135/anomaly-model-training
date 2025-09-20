@@ -10,4 +10,6 @@ import java.util.List;
 public interface TransactionFeatureRepository extends JpaRepository<TransactionFeatureEntity, Long> {
 
     List<TransactionFeatureEntity> findByCustomerId(long customerId);
+
+    List<TransactionFeatureEntity> findByIsTrainable(boolean isTrainable);
 }

@@ -29,12 +29,12 @@ public class AnomalyModelTrainingApplication{
             System.out.println("Initializing database with employee data...");
             log.info("Initializing database...");
             DataPreparationService dataPreparationService = new DataPreparationService(transactionRepository);
-            dataPreparationService.prepareData();
+            //dataPreparationService.prepareData();
             log.info("Initializing database Completed...");
 
             log.info("Fill Anomaly Feature Data...");
             AnomalyFeatureFillService anomalyFeatureFillService = new AnomalyFeatureFillService(transactionRepository,transactionFeatureRepository,customerBaseLineRepository);
-            anomalyFeatureFillService.doFeatureFill();
+            //anomalyFeatureFillService.doFeatureFill();
             log.info("Fill Anomaly Feature Data Completed...");
 
             log.info("Train Isolation Forest Model...");
@@ -44,7 +44,7 @@ public class AnomalyModelTrainingApplication{
 
             log.info("Isolation Forest Visualization...");
             ModelVizService modelVizService = new ModelVizService(modelRegistryRepository,transactionFeatureRepository);
-            modelVizService.visualize();
+            //modelVizService.visualize();
             log.info("Isolation Forest Visualization Completed...");
 
             log.info("Real Time Transaction Test...");

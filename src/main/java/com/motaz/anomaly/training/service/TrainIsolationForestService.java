@@ -30,23 +30,25 @@ public class TrainIsolationForestService {
     public void trainModel(){
         //TODO: Use Pagination
         List<double[]> rows = new ArrayList<>();
-        AtomicInteger trainedRows= new AtomicInteger();
-        transactionFeatureRepository.findAll().forEach(transactionFeature ->{
-            if(trainedRows.get()>5){
+        transactionFeatureRepository.findByIsTrainable(true).forEach(transactionFeature ->{
                 rows.add(new double[]{
                         transactionFeature.getAmountZScore(),
                         transactionFeature.getTimeSegmentRatio(),
                         transactionFeature.getVelocityRatio(),
                         transactionFeature.getMedianDeviation()
                 });
-            }
-            trainedRows.getAndIncrement();
         });
 
         if(!rows.isEmpty()){
             double[][] trainingData = rows.toArray(new double[0][]);
             log.info("Training Isolation Forest model...");
-            IsolationForest iforest = IsolationForest.fit(trainingData);
+
+            // 2) Build options
+            // 3) Compute sampling_rate = min(1.0, TARGET_SUBSAMPLE / n)
+            double samplingRate = Math.min(1.0, SUBSAMPLE / (double) trainingData.length);
+            log.info("sampling rate: {}",  samplingRate);
+            IsolationForest.Options options = new IsolationForest.Options(TREES, 0, samplingRate, 0);
+            IsolationForest iforest = IsolationForest.fit(trainingData,options);
             log.info("Model trained successfully.");
 
             // serialize + save
@@ -64,7 +66,7 @@ public class TrainIsolationForestService {
             String schema ="[amountZScore,timeSegmentRatio,velocityRatio,medianDeviation]";
             ModelRegistryEntity modelRegistryEntity = new ModelRegistryEntity();
             modelRegistryEntity.setTrees(iforest.trees().length);
-            modelRegistryEntity.setSubsample(iforest.getExtensionLevel());
+            modelRegistryEntity.setSubsample((int) samplingRate);
             modelRegistryEntity.setFeatureSchema(schema);
             modelRegistryEntity.setSchemaHash(Integer.toHexString(schema.hashCode()));
             modelRegistryEntity.setTrainedRows(Long.valueOf(trainingData.length));
@@ -78,23 +80,29 @@ public class TrainIsolationForestService {
                 scores[i] = iforest.score(trainingData[i]);
             }
 
+            Arrays.sort(scores);
+            double p95 = scores[(int)Math.floor(0.95 * (scores.length - 1))]; // 95th percentile
+            double p98 = scores[(int)Math.floor(0.98 * (scores.length - 1))]; // 98th percentile
+            double p99 = scores[(int)Math.floor(0.99 * (scores.length - 1))]; // 99th percentile
+            log.info("Calibrated percentiles (higher=worse): p95={}, p98={}, p99={}", p95, p98, p99);
+
             // Display results
             log.info("Dataset size: {} pints", trainingData.length);
             log.info("Number of trees: {} ", iforest.trees().length);
             log.info("Subsample size: {}", iforest.getExtensionLevel());
 
             // Find top anomalies
-            Integer[] indices = new Integer[trainingData.length];
-            for (int i = 0; i < indices.length; i++) indices[i] = i;
-            Arrays.sort(indices, (i, j) -> Double.compare(scores[j], scores[i]));
-
-            log.info("\nTop 10 anomalies (higher scores = more anomalous):");
-            for (int i = 0; i < Math.min(10, trainingData.length); i++) {
-                int idx = indices[i];
-                System.out.printf("Point %d: (%.2f, %.2f) -> Score: %.4f%s%n",
-                        idx, trainingData[idx][0], trainingData[idx][1], scores[idx],
-                        idx >= 0.97 ? " [Actual Anomaly]" : "");
-            }
+//            Integer[] indices = new Integer[trainingData.length];
+//            for (int i = 0; i < indices.length; i++) indices[i] = i;
+//            Arrays.sort(indices, (i, j) -> Double.compare(scores[j], scores[i]));
+//
+//            log.info("\nTop 10 anomalies (higher scores = more anomalous):");
+//            for (int i = 0; i < Math.min(10, trainingData.length); i++) {
+//                int idx = indices[i];
+//                System.out.printf("Point %d: (%.2f, %.2f) -> Score: %.4f%s%n",
+//                        idx, trainingData[idx][0], trainingData[idx][1], scores[idx],
+//                        idx >= 0.97 ? " [Actual Anomaly]" : "");
+//            }
 
         }
 

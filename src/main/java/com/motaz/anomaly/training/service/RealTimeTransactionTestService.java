@@ -26,7 +26,7 @@ import static java.lang.Math.sqrt;
 @RequiredArgsConstructor
 public class RealTimeTransactionTestService {
 
-    private static final double THRESHOLD = 0.97;
+    private static final double THRESHOLD = 0.544;
     private final ModelRegistryRepository modelRegistryRepository;
     private final CustomerBaseLineRepository customerBaseLineRepository;
     private final TransactionRepository transactionRepository;
@@ -58,6 +58,11 @@ public class RealTimeTransactionTestService {
                                  LocalDateTime tsUtc) throws Exception {
         //Load model
         IsolationForest iForest = loadLatestModel();
+
+        double sTypical  = iForest.score(new double[]{0, 1, 1, 1});
+        double sExtreme  = iForest.score(new double[]{10, 20, 20, 20});
+        boolean lowerIsWorse = sExtreme < sTypical;
+        log.info("IF orientation: typical={} extreme={} → lowerIsWorse={}", sTypical, sExtreme, lowerIsWorse);
 
         //get customer baseline
         double mean = 0, std = 0, median = 0, segNight = 0, segMorning = 0, segAfternoon = 0, segEvening = 0;
@@ -109,73 +114,73 @@ public class RealTimeTransactionTestService {
                 String.format("%.4f", score),
                 underReview ? "UNDER_REVIEW" : "ALLOW");
 
-        //Save Transaction to T_transaction table
-        TransactionEntity transactionEntity = new TransactionEntity();
-        transactionEntity.setCustomerId(customerId);
-        transactionEntity.setCurrencyCode("SAR");
-        transactionEntity.setAmount(new BigDecimal(amount));
-        transactionEntity.setChannel("ATM");
-        transactionEntity.setTsUtc(tsUtc.toInstant(ZoneOffset.UTC));
-        final TransactionEntity savedTransaction = transactionRepository.save(transactionEntity);
-
-        //Save Transaction to T_transaction_features table
-        TransactionFeatureEntity transactionFeatureEntity = new TransactionFeatureEntity();
-        transactionFeatureEntity.setTxn(savedTransaction);
-        transactionFeatureEntity.setCustomerId(customerId);
-        transactionFeatureEntity.setTsUtc(savedTransaction.getTsUtc());
-        transactionFeatureEntity.setCurrencyCode("SAR");
-        transactionFeatureEntity.setAmount(amount);
-
-        transactionFeatureEntity.setAmountZScore(amountZScore);
-        transactionFeatureEntity.setTimeSegmentRatio(timeSegmentRatio);
-        transactionFeatureEntity.setVelocityRatio(velocityRatio);
-        transactionFeatureEntity.setMedianDeviation(medianDeviation);
-
-
-        FeatureBaseline featureBaseline = new FeatureBaseline();
-        featureBaseline.n = customerBaselineEntity.getNTx()+1;
-        double delta  = amount - featureBaseline.mean;
-        featureBaseline.mean += delta / featureBaseline.n;
-        double delta2 = amount- featureBaseline.mean;
-        featureBaseline.m2 += delta * delta2;
-        featureBaseline.std = (featureBaseline.n > 1) ? sqrt(featureBaseline.m2 / (featureBaseline.n - 1)) : max(featureBaseline.std, 1.0);
-        featureBaseline.segCount[seg] += 1;
-        double prev = featureBaseline.segMean[seg];
-        featureBaseline.segMean[seg] = prev + (amount - prev) / featureBaseline.segCount[seg];
-
-        transactionFeatureEntity.setBaselineN(featureBaseline.n);
-        transactionFeatureEntity.setBaselineMeanAmount(featureBaseline.mean);
-        transactionFeatureEntity.setBaselineStdAmount(featureBaseline.std);
-        transactionFeatureEntity.setBaselineMedianAmount(median);
-        transactionFeatureEntity.setBaselineSegIndex(seg);
-        transactionFeatureEntity.setBaselineSegMean(segMean);
-        transactionFeatureRepository.save(transactionFeatureEntity);
-
-        // Log to Transaction Alert Table
-        AnomalyAlertEntity anomalyAlertEntity = new AnomalyAlertEntity();
-        anomalyAlertEntity.setCustomerId(customerId);
-        anomalyAlertEntity.setTxnId(savedTransaction.getId().toString());
-        anomalyAlertEntity.setAmount(new BigDecimal(amount));
-        anomalyAlertEntity.setCurrencyCode("SAR");
-        anomalyAlertEntity.setChannel("ATM");
-        anomalyAlertEntity.setTsUtc(savedTransaction.getTsUtc());
-        anomalyAlertEntity.setScore(new BigDecimal(score));
-        anomalyAlertEntity.setSeverity("UNDER_REVIEW");
-
-        String featuresJson = String.format(
-                "{\"amountZScore\": %.6f, \"timeSegmentRatio\": %.6f, \"velocityRatio\": %.6f, \"medianDeviation\": %.6f}",
-                amountZScore, timeSegmentRatio, velocityRatio, medianDeviation
-        );
-        String baselineJson = String.format(
-                "{\"mean\": %.6f, \"std\": %.6f, \"median\": %.6f, \"segmentIndex\": %d, \"segmentMean\": %.6f}",
-                mean, std, median, seg, segMean
-        );
-        Map<String,Object> factsJson = new HashMap<>();
-        factsJson.put("features", featuresJson);
-        factsJson.put("baseline", baselineJson);
-        anomalyAlertEntity.setFactsJson(factsJson);
-
-        anomalyAlertRepository.save(anomalyAlertEntity);
+//        //Save Transaction to T_transaction table
+//        TransactionEntity transactionEntity = new TransactionEntity();
+//        transactionEntity.setCustomerId(customerId);
+//        transactionEntity.setCurrencyCode("SAR");
+//        transactionEntity.setAmount(new BigDecimal(amount));
+//        transactionEntity.setChannel("ATM");
+//        transactionEntity.setTsUtc(tsUtc.toInstant(ZoneOffset.UTC));
+//        final TransactionEntity savedTransaction = transactionRepository.save(transactionEntity);
+//
+//        //Save Transaction to T_transaction_features table
+//        TransactionFeatureEntity transactionFeatureEntity = new TransactionFeatureEntity();
+//        transactionFeatureEntity.setTxn(savedTransaction);
+//        transactionFeatureEntity.setCustomerId(customerId);
+//        transactionFeatureEntity.setTsUtc(savedTransaction.getTsUtc());
+//        transactionFeatureEntity.setCurrencyCode("SAR");
+//        transactionFeatureEntity.setAmount(amount);
+//
+//        transactionFeatureEntity.setAmountZScore(amountZScore);
+//        transactionFeatureEntity.setTimeSegmentRatio(timeSegmentRatio);
+//        transactionFeatureEntity.setVelocityRatio(velocityRatio);
+//        transactionFeatureEntity.setMedianDeviation(medianDeviation);
+//
+//
+//        FeatureBaseline featureBaseline = new FeatureBaseline();
+//        featureBaseline.n = customerBaselineEntity.getNTx()+1;
+//        double delta  = amount - featureBaseline.mean;
+//        featureBaseline.mean += delta / featureBaseline.n;
+//        double delta2 = amount- featureBaseline.mean;
+//        featureBaseline.m2 += delta * delta2;
+//        featureBaseline.std = (featureBaseline.n > 1) ? sqrt(featureBaseline.m2 / (featureBaseline.n - 1)) : max(featureBaseline.std, 1.0);
+//        featureBaseline.segCount[seg] += 1;
+//        double prev = featureBaseline.segMean[seg];
+//        featureBaseline.segMean[seg] = prev + (amount - prev) / featureBaseline.segCount[seg];
+//
+//        transactionFeatureEntity.setBaselineN(featureBaseline.n);
+//        transactionFeatureEntity.setBaselineMeanAmount(featureBaseline.mean);
+//        transactionFeatureEntity.setBaselineStdAmount(featureBaseline.std);
+//        transactionFeatureEntity.setBaselineMedianAmount(median);
+//        transactionFeatureEntity.setBaselineSegIndex(seg);
+//        transactionFeatureEntity.setBaselineSegMean(segMean);
+//        transactionFeatureRepository.save(transactionFeatureEntity);
+//
+//        // Log to Transaction Alert Table
+//        AnomalyAlertEntity anomalyAlertEntity = new AnomalyAlertEntity();
+//        anomalyAlertEntity.setCustomerId(customerId);
+//        anomalyAlertEntity.setTxnId(savedTransaction.getId().toString());
+//        anomalyAlertEntity.setAmount(new BigDecimal(amount));
+//        anomalyAlertEntity.setCurrencyCode("SAR");
+//        anomalyAlertEntity.setChannel("ATM");
+//        anomalyAlertEntity.setTsUtc(savedTransaction.getTsUtc());
+//        anomalyAlertEntity.setScore(new BigDecimal(score));
+//        anomalyAlertEntity.setSeverity("UNDER_REVIEW");
+//
+//        String featuresJson = String.format(
+//                "{\"amountZScore\": %.6f, \"timeSegmentRatio\": %.6f, \"velocityRatio\": %.6f, \"medianDeviation\": %.6f}",
+//                amountZScore, timeSegmentRatio, velocityRatio, medianDeviation
+//        );
+//        String baselineJson = String.format(
+//                "{\"mean\": %.6f, \"std\": %.6f, \"median\": %.6f, \"segmentIndex\": %d, \"segmentMean\": %.6f}",
+//                mean, std, median, seg, segMean
+//        );
+//        Map<String,Object> factsJson = new HashMap<>();
+//        factsJson.put("features", featuresJson);
+//        factsJson.put("baseline", baselineJson);
+//        anomalyAlertEntity.setFactsJson(factsJson);
+//
+//        anomalyAlertRepository.save(anomalyAlertEntity);
 
     }
     static double clip(double v, double lo, double hi) {
