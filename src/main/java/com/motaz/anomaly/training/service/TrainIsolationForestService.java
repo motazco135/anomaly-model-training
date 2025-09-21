@@ -25,11 +25,20 @@ public class TrainIsolationForestService {
 
     private static final int TREES = 150;
     private static final int SUBSAMPLE = 256;
+    private static final double THRESHOLD = 0.75;
 
     public void trainModel(){
         //TODO: Use Pagination
         List<double[]> rows = new ArrayList<>();
+        List<double[]> customer101 = new ArrayList<>();
         transactionFeatureRepository.findByIsTrainable(true).forEach(transactionFeature ->{
+            if(transactionFeature.getCustomerId()==101l){
+                customer101.add(new double[]{
+                        transactionFeature.getAmountZScore(),
+                        transactionFeature.getTimeSegmentRatio(),
+                        transactionFeature.getVelocityRatio(),
+                        transactionFeature.getMedianDeviation()});
+            }
                 rows.add(new double[]{
                         transactionFeature.getAmountZScore(),
                         transactionFeature.getTimeSegmentRatio(),
@@ -40,6 +49,7 @@ public class TrainIsolationForestService {
 
         if(!rows.isEmpty()){
             double[][] trainingData = rows.toArray(new double[0][]);
+            double[][] customerData = customer101.toArray(new double[0][]);
             log.info("Training Isolation Forest model...");
 
             //Compute sampling_rate = min(1.0, TARGET_SUBSAMPLE / n)
@@ -77,6 +87,10 @@ public class TrainIsolationForestService {
             for (int i = 0; i < trainingData.length; i++) {
                 scores[i] = iforest.score(trainingData[i]);
             }
+            double[] customer101Score = new double[customerData.length];
+            for(int c = 0; c<customerData.length; c++ ){
+                customer101Score[c] =iforest.score(customerData[c]);
+            }
 
             Arrays.sort(scores);
             double p95 = scores[(int)Math.floor(0.95 * (scores.length - 1))]; // 95th percentile
@@ -90,6 +104,13 @@ public class TrainIsolationForestService {
             log.info("Subsample size: {}", iforest.getExtensionLevel());
 
             // Find top anomalies
+            for(int t = 0; t < customer101Score.length; t++){
+                if(customer101Score[t]>=THRESHOLD){
+                   log.info(" customer 101 : [Actual Anomaly] score: {}", customer101Score[t]);
+                }else{
+                    log.info(" customer 101 : [Normal] score: {}", customer101Score[t]);
+                }
+            }
 //            Integer[] indices = new Integer[trainingData.length];
 //            for (int i = 0; i < indices.length; i++) indices[i] = i;
 //            Arrays.sort(indices, (i, j) -> Double.compare(scores[j], scores[i]));
