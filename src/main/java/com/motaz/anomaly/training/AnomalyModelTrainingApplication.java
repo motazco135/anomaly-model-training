@@ -52,8 +52,8 @@ public class AnomalyModelTrainingApplication{
                     customerBaseLineRepository,transactionRepository,transactionFeatureRepository,anomalyAlertRepository);
 
             long customerId = 101L;
-            double amountSar = 150000;
-            LocalDateTime tsUtc = LocalDateTime.now().withHour(2).withMinute(30).withSecond(0).withNano(0);
+            double amountSar = 10000;
+            LocalDateTime tsUtc = LocalDateTime.now();
             realTimeTransactionTestService.simulateAndScore(customerId,amountSar,tsUtc);
             log.info("Real Time Transaction Test Completed...");
 
