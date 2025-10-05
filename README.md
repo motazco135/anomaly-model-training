@@ -383,7 +383,7 @@ to train the model:
 The code above in summary will do the following:
 
 <figure>
-<img src="../resources/ai/part4/data-flow.png" alt="Data Flow" />
+<img src="https://github.com/motazco135/anomaly-model-training/blob/master/src/main/resources/data-flow.png" alt="Data Flow" />
 <figcaption aria-hidden="true">Data Flow</figcaption>
 </figure>
 
